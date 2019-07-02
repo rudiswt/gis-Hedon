@@ -5,12 +5,16 @@ import { Card, ListItem, Input, SearchBar, Button, Divider, Icon, Text  } from '
 import MapViewDirections from 'react-native-maps-directions';
 import { Notifications, Location, Permissions, Constants } from 'expo';
 import SlidingUpPanel from 'rn-sliding-up-panel';
+// import { getDistance, isPointWithinRadius } from 'geolib';
+import { geocodeAsync } from 'expo-location';
+import Update from 'react-addons-update'
 
 const LATITUDE_DELTA = 0.009;
 const LONGITUDE_DELTA = 0.009;
 const LATITUDE = -7.321057;
 const LONGITUDE = 112.734399;
 const { height } = Dimensions.get("window");
+const geolib = require('geolib');
 
 export default class App extends React.Component {
 
@@ -23,6 +27,7 @@ export default class App extends React.Component {
         super(props)
         this.state = {
             listTempat: [],
+            dptRadius:false,
             source:[],
             destination:[],
             informasi:{},
@@ -61,7 +66,8 @@ export default class App extends React.Component {
         return fetch('https://www.api.ilmusaya.web.id/public/api/listTempat')
         .then((response) => response.json())
         .then((responseJson) => {
-          this.setState({listTempat:responseJson})
+          this.setState({listTempat:responseJson}, () => {
+          })
           this._getLocationAsync();
         })
         .catch((error) => {
@@ -91,8 +97,10 @@ export default class App extends React.Component {
           }]
       }, () => {
         // this._getAlamatGmaps()
-        console.log(this.state)
-      });});
+        // console.log(this.state)
+        this.checkRadius()
+      });
+    });
       
     }
 
@@ -110,6 +118,21 @@ export default class App extends React.Component {
       })
     }
 
+    checkRadius = () => {
+      let cek = null
+      this.state.listTempat.map( (item, index) => {
+        cek = geolib.isPointWithinRadius(
+          { latitude: item.latitude_tempat, longitude: item.longitude_tempat },
+          { latitude: Number(this.state.coords.latitude), longitude: Number(this.state.coords.longitude) },
+          5000
+        )
+        this.state.listTempat[index].key_radius = String(cek)
+      })
+      this.setState({
+        dptRadius:true
+      })
+    }
+
     
     render() {
     const key = 'AIzaSyCu31iVIKd18ciqdbaxRXtsucgioewxhDY';
@@ -121,7 +144,7 @@ export default class App extends React.Component {
         <View style={styles.wrapper}>
           <View style={styles.container}>
                   
-            { this.state.coords.length !== 0 ?
+            { this.state.coords.length !== 0 && this.state.dptRadius === true ?
               <MapView style={styles.map} 
                 initialRegion={{  
                   latitude:this.state.coords.latitude,
@@ -137,17 +160,19 @@ export default class App extends React.Component {
                 toolbarEnabled={true}
               >
 
-                {this.state.listTempat.map( (item, index) => (
-                  <MapView.Marker
-                  coordinate={{latitude: item.latitude_tempat,
-                  longitude: item.longitude_tempat}}
-                  title={item.nama_tempat}
-                  key={item.id_tempat}
-                  description={item.keterangan_tempat}
-                  pinColor='#1976d2'
-                  onPress={(e) => this.onPressMarker(item,index)}
-                  />
-                ))}
+                {this.state.listTempat.map( (item, index) => {
+                  if(item.key_radius === "true")
+                    return <MapView.Marker
+                      coordinate={{latitude: item.latitude_tempat, longitude: item.longitude_tempat}}
+                      title={item.nama_tempat}
+                      key={item.id_tempat}
+                      description={item.key_radius}
+                      pinColor='#1976d2'
+                      onPress={(e) => this.onPressMarker(item,index)}
+                    />
+                  if(item.key_radius === "false")
+                    return null;
+                })}
 
                 {!!this.state.coords.latitude && !!this.state.coords.longitude && 
                   <MapView.Marker

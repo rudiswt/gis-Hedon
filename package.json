@@ -10,7 +10,9 @@
   "dependencies": {
     "expo": "^33.0.0",
     "expo-permissions": "~5.0.1",
+    "geolib": "^3.0.4",
     "react": "16.8.3",
+    "react-addons-update": "^15.6.2",
     "react-dom": "^16.8.6",
     "react-native": "https://github.com/expo/react-native/archive/sdk-33.0.0.tar.gz",
     "react-native-elements": "^1.1.0",
